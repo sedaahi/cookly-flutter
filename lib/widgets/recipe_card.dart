@@ -5,9 +5,17 @@ import '../theme/app_theme.dart';
 
 class RecipeCard extends StatelessWidget {
   final RecipeModel recipe;
-  final VoidCallback? onTap;
+  final VoidCallback? onTap; //VoidCallback->parametre almayan ve geriye değer döndürmeyen bir fonksiyon
+  final bool isFavorite;
+  final VoidCallback? onFavoriteTap;
 
-  const RecipeCard({super.key, required this.recipe, this.onTap});
+  const RecipeCard({
+    super.key,
+    required this.recipe,
+    this.onTap,
+    this.isFavorite = false,
+    this.onFavoriteTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -76,16 +84,22 @@ class RecipeCard extends StatelessWidget {
                   Positioned(
                     top: 16,
                     right: 16,
-                    child: Container(
-                      padding: const EdgeInsets.all(9),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.favorite_border_rounded,
-                        color: AppTheme.primary,
-                        size: 21,
+                    child: Material(
+                      color: Colors.white,
+                      shape: const CircleBorder(),
+                      child: IconButton(
+                        onPressed: onFavoriteTap,
+                        icon: Icon(
+                          isFavorite
+                              ? Icons.favorite_rounded
+                              : Icons.favorite_border_rounded,
+                          color: isFavorite
+                              ? AppTheme.primary
+                              : AppTheme.textDark,
+                        ),
+                        iconSize: 24,
+                        padding: const EdgeInsets.all(10),
+                        constraints: const BoxConstraints(),
                       ),
                     ),
                   ),

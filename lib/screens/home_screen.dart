@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../models/recipe_model.dart';
 import '../services/api_service.dart';
+import '../services/local_storage_service.dart';
+
 import '../theme/app_theme.dart';
 import '../widgets/recipe_card.dart';
+import 'recipe_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ApiService apiService = ApiService();
   final TextEditingController searchController = TextEditingController();
+  final LocalStorageService _localStorageService = LocalStorageService();
 
   List<RecipeModel> recipes = [];
   bool isLoading = true;
@@ -22,6 +26,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String selectedCategory = 'All';
   String searchQuery = '';
+
+  Set<int> favoriteIds = {};
 
   final List<String> categories = [
     'All',
@@ -32,18 +38,6 @@ class _HomeScreenState extends State<HomeScreen> {
     'Snack',
     'Appetizer',
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    loadRecipes();
-  }
-
-  @override
-  void dispose() {
-    searchController.dispose();
-    super.dispose();
-  }
 
   Future<void> loadRecipes() async {
     setState(() {
@@ -82,6 +76,43 @@ class _HomeScreenState extends State<HomeScreen> {
 
       return matchesCategory && matchesSearch;
     }).toList();
+  }
+
+  Future<void> loadFavorites() async {
+    final savedIds = await _localStorageService.getFavorites();
+
+    if (!mounted) return;
+
+    setState(() {
+      favoriteIds = savedIds.toSet();
+    });
+  }
+
+  Future<void> toggleFavorite(int recipeId) async {
+    final isNowFavorite = await _localStorageService.toggleFavorite(recipeId);
+
+    if (!mounted) return;
+
+    setState(() {
+      if (isNowFavorite) {
+        favoriteIds.add(recipeId);
+      } else {
+        favoriteIds.remove(recipeId);
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadRecipes(); // Mevcut API yükleme metodunun adını koru
+    loadFavorites();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -231,7 +262,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Center(child: Text('No recipes found.')),
               )
             else
-              ...visibleRecipes.map((recipe) => RecipeCard(recipe: recipe)),
+              ...visibleRecipes.map(
+                (recipe) => RecipeCard(
+                  isFavorite: favoriteIds.contains(recipe.id),
+                  onFavoriteTap: () => toggleFavorite(recipe.id),
+                  recipe: recipe,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            RecipeDetailScreen(recipe: recipe),
+                      ),
+                    );
+                  },
+                ),
+              ),
           ],
         ),
       ),

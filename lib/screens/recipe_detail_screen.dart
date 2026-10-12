@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/recipe_model.dart';
 import '../theme/app_theme.dart';
+import '../widgets/recipe_info_item.dart';
 
 class RecipeDetailScreen extends StatelessWidget {
   final RecipeModel recipe;
@@ -74,25 +75,25 @@ class RecipeDetailScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _infoItem(
-                        Icons.star_rounded,
-                        '${recipe.rating}',
-                        'Rating',
+                      RecipeInfoItem(
+                        icon: Icons.star_rounded,
+                        value: '${recipe.rating}',
+                        label: 'Rating',
                       ),
-                      _infoItem(
-                        Icons.schedule_rounded,
-                        '$totalTime min',
-                        'Total Time',
+                      RecipeInfoItem(
+                        icon: Icons.schedule_rounded,
+                        value: '$totalTime min',
+                        label: 'Total Time',
                       ),
-                      _infoItem(
-                        Icons.people_outline_rounded,
-                        '${recipe.servings}',
-                        'Servings',
+                      RecipeInfoItem(
+                        icon: Icons.people_outline_rounded,
+                        value: '${recipe.servings}',
+                        label: 'Servings',
                       ),
-                      _infoItem(
-                        Icons.local_fire_department_outlined,
-                        '${recipe.caloriesPerServing}',
-                        'Calories',
+                      RecipeInfoItem(
+                        icon: Icons.local_fire_department_outlined,
+                        value: '${recipe.caloriesPerServing}',
+                        label: 'Calories',
                       ),
                     ],
                   ),
@@ -189,24 +190,6 @@ class RecipeDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _infoItem(IconData icon, String value, String label) {
-    return Column(
-      children: [
-        Icon(icon, color: AppTheme.primary, size: 24),
-        const SizedBox(height: 7),
-        Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.black54, fontSize: 11),
-        ),
-      ],
     );
   }
 }
