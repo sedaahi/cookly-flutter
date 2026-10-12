@@ -15,14 +15,22 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int selectedIndex = 0;
 
-  final List<Widget> pages = const [
-    HomeScreen(),
-    FavoritesScreen(),
-    MyRecipesScreen(),
-  ];
+  final ValueNotifier<int> favoritesRefreshNotifier = ValueNotifier<int>(0);
+
+  @override
+  void dispose() {
+    favoritesRefreshNotifier.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      HomeScreen(refreshListenable: favoritesRefreshNotifier),
+      FavoritesScreen(refreshListenable: favoritesRefreshNotifier),
+      const MyRecipesScreen(),
+    ];
+
     return Scaffold(
       body: IndexedStack(index: selectedIndex, children: pages),
       bottomNavigationBar: NavigationBar(
@@ -30,9 +38,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         backgroundColor: Colors.white,
         indicatorColor: AppTheme.primary.withValues(alpha: 0.12),
         onDestinationSelected: (index) {
+          if (index == selectedIndex) return;
+
           setState(() {
             selectedIndex = index;
           });
+
+          if (index == 0 || index == 1) {
+            favoritesRefreshNotifier.value++;
+            debugPrint('Favorites refresh: $index');
+          }
         },
         destinations: const [
           NavigationDestination(

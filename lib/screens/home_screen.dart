@@ -1,15 +1,17 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/recipe_model.dart';
 import '../services/api_service.dart';
 import '../services/local_storage_service.dart';
-
 import '../theme/app_theme.dart';
 import '../widgets/recipe_card.dart';
 import 'recipe_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final ValueListenable<int> refreshListenable;
+
+  const HomeScreen({super.key, required this.refreshListenable});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -17,17 +19,18 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ApiService apiService = ApiService();
-  final TextEditingController searchController = TextEditingController();
   final LocalStorageService _localStorageService = LocalStorageService();
 
+  final TextEditingController searchController = TextEditingController();
+
   List<RecipeModel> recipes = [];
+  Set<int> favoriteIds = {};
+
   bool isLoading = true;
   String errorMessage = '';
 
   String selectedCategory = 'All';
   String searchQuery = '';
-
-  Set<int> favoriteIds = {};
 
   final List<String> categories = [
     'All',
@@ -38,6 +41,33 @@ class _HomeScreenState extends State<HomeScreen> {
     'Snack',
     'Appetizer',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    loadRecipes();
+    loadFavorites();
+
+    widget.refreshListenable.addListener(loadFavorites);
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.refreshListenable != widget.refreshListenable) {
+      oldWidget.refreshListenable.removeListener(loadFavorites);
+      widget.refreshListenable.addListener(loadFavorites);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.refreshListenable.removeListener(loadFavorites);
+    searchController.dispose();
+    super.dispose();
+  }
 
   Future<void> loadRecipes() async {
     setState(() {
@@ -64,22 +94,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  List<RecipeModel> get filteredRecipes {
-    return recipes.where((recipe) {
-      final matchesCategory =
-          selectedCategory == 'All' ||
-          recipe.mealType.contains(selectedCategory);
-
-      final matchesSearch = recipe.name.toLowerCase().contains(
-        searchQuery.toLowerCase(),
-      );
-
-      return matchesCategory && matchesSearch;
-    }).toList();
-  }
-
   Future<void> loadFavorites() async {
     final savedIds = await _localStorageService.getFavorites();
+
+    debugPrint('Home favorites loaded: $savedIds');
 
     if (!mounted) return;
 
@@ -102,17 +120,18 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  @override
-  void initState() {
-    super.initState();
-    loadRecipes(); // Mevcut API yükleme metodunun adını koru
-    loadFavorites();
-  }
+  List<RecipeModel> get filteredRecipes {
+    return recipes.where((recipe) {
+      final matchesCategory =
+          selectedCategory == 'All' ||
+          recipe.mealType.contains(selectedCategory);
 
-  @override
-  void dispose() {
-    searchController.dispose();
-    super.dispose();
+      final matchesSearch = recipe.name.toLowerCase().contains(
+        searchQuery.toLowerCase(),
+      );
+
+      return matchesCategory && matchesSearch;
+    }).toList();
   }
 
   @override
@@ -264,9 +283,9 @@ class _HomeScreenState extends State<HomeScreen> {
             else
               ...visibleRecipes.map(
                 (recipe) => RecipeCard(
+                  recipe: recipe,
                   isFavorite: favoriteIds.contains(recipe.id),
                   onFavoriteTap: () => toggleFavorite(recipe.id),
-                  recipe: recipe,
                   onTap: () {
                     Navigator.push(
                       context,
