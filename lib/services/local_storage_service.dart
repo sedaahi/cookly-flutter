@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:cookly_flutter/models/recipe_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorageService {
@@ -42,4 +45,29 @@ class LocalStorageService {
 
     return favorites.contains(recipeId);
   }
+
+
+Future<List<RecipeModel>> getMyRecipes() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  final savedRecipes =
+      prefs.getStringList('my_recipes') ?? [];
+
+  return savedRecipes
+      .map((recipe) =>
+          RecipeModel.fromJson(jsonDecode(recipe)))
+      .toList();
+}
+
+Future<void> saveMyRecipe(RecipeModel recipe) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  final savedRecipes =
+      prefs.getStringList('my_recipes') ?? [];
+
+  savedRecipes.add(jsonEncode(recipe.toJson()));
+
+  await prefs.setStringList('my_recipes', savedRecipes);
+}
+
 }
