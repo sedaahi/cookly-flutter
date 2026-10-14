@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/recipe_model.dart';
 import '../theme/app_theme.dart';
+import 'recipe_image.dart';
 
 class RecipeCard extends StatelessWidget {
   final RecipeModel recipe;
@@ -45,17 +46,11 @@ class RecipeCard extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  Image.network(
-                    recipe.image,
+                  RecipeImage(
+                    image: recipe.image,
                     width: double.infinity,
                     height: 220,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const SizedBox(
-                        height: 220,
-                        child: Center(child: Icon(Icons.restaurant, size: 48)),
-                      );
-                    },
                   ),
 
                   Positioned(

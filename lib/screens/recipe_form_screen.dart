@@ -7,6 +7,7 @@ import '../widgets/recipe_photo_picker.dart';
 import '../models/recipe_model.dart';
 import '../services/local_storage_service.dart';
 import '../services/image_storage_service.dart';
+import '../widgets/recipe_dropdown_field.dart';
 
 class RecipeFormScreen extends StatefulWidget {
   final RecipeModel? recipe;
@@ -34,6 +35,18 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   bool isSaving = false;
   XFile? selectedImage;
 
+  static const List<String> mealTypes = [
+    'Breakfast',
+    'Lunch',
+    'Dinner',
+    'Snack',
+    'Dessert',
+    'Appetizer',
+    'Beverage',
+  ];
+
+  String? selectedMealType;
+
   bool get isEditing => widget.recipe != null;
 
   @override
@@ -50,6 +63,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       servingsController.text = recipe.servings.toString();
       ingredientsController.text = recipe.ingredients.join('\n');
       instructionsController.text = recipe.instructions.join('\n');
+      if (recipe.mealType.isNotEmpty &&
+          mealTypes.contains(recipe.mealType.first)) {
+        selectedMealType = recipe.mealType.first;
+      }
     }
   }
 
@@ -115,7 +132,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         cuisine: cuisineController.text.trim(),
         rating: widget.recipe?.rating ?? 0.0,
         tags: widget.recipe?.tags ?? [],
-        mealType: widget.recipe?.mealType ?? [],
+        mealType: [selectedMealType!],
       );
 
       if (isEditing) {
@@ -229,6 +246,25 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
               hint: 'e.g. Italian',
               controller: cuisineController,
               validator: requiredValidator,
+            ),
+            const SizedBox(height: 20),
+
+            RecipeDropdownField(
+              label: 'Meal Type',
+              hint: 'Select a meal type',
+              value: selectedMealType,
+              items: mealTypes,
+              onChanged: (value) {
+                setState(() {
+                  selectedMealType = value;
+                });
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please select a meal type';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 20),
 
