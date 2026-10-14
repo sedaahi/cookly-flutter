@@ -1,73 +1,70 @@
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../theme/app_theme.dart';
+import 'recipe_image.dart';
 
-class RecipePhotoPicker extends StatefulWidget {
+class RecipePhotoPicker extends StatelessWidget {
+  final XFile? selectedImage;
+  final String? initialImage;
   final ValueChanged<XFile?> onImageSelected;
 
-  const RecipePhotoPicker({super.key, required this.onImageSelected});
+  const RecipePhotoPicker({
+    super.key,
+    required this.selectedImage,
+    required this.onImageSelected,
+    this.initialImage,
+  });
 
-  @override
-  State<RecipePhotoPicker> createState() => _RecipePhotoPickerState();
-}
-
-class _RecipePhotoPickerState extends State<RecipePhotoPicker> {
-  final ImagePicker _picker = ImagePicker();
-
-  XFile? selectedImage;
-
-  Future<void> pickImage() async {
+  Future<void> pickImage(BuildContext context) async {
     try {
-      final image = await _picker.pickImage(
+      final image = await ImagePicker().pickImage(
         source: ImageSource.gallery,
         imageQuality: 80,
         maxWidth: 1200,
       );
 
-      if (image == null) return;
+      if (image == null || !context.mounted) return;
 
-      if (!mounted) return;
-
-      setState(() {
-        selectedImage = image;
-      });
-
-      widget.onImageSelected(image);
-    } catch (e, stackTrace) {
+      onImageSelected(image);
+    } catch (e) {
       debugPrint('IMAGE PICKER ERROR: $e');
-      debugPrintStack(stackTrace: stackTrace);
 
-      if (!mounted) return;
+      if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Image selection failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not select image. Please try again.',
+          ),
+        ),
+      );
     }
-  }
-
-  void removeImage() {
-    setState(() {
-      selectedImage = null;
-    });
-
-    widget.onImageSelected(null);
   }
 
   @override
   Widget build(BuildContext context) {
+    final hasSelectedImage = selectedImage != null;
+    final hasInitialImage =
+        initialImage != null && initialImage!.isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Recipe Photo',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 10),
 
         GestureDetector(
-          onTap: pickImage,
+          onTap: () => pickImage(context),
           child: Container(
             width: double.infinity,
             height: 210,
@@ -76,40 +73,24 @@ class _RecipePhotoPickerState extends State<RecipePhotoPicker> {
               color: AppTheme.surface,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: selectedImage == null
-                ? const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.add_photo_alternate_outlined,
-                        size: 48,
-                        color: AppTheme.primary,
-                      ),
-                      SizedBox(height: 12),
-                      Text(
-                        'Add Recipe Photo',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textDark,
-                        ),
-                      ),
-                      SizedBox(height: 6),
-                      Text(
-                        'Tap to choose from gallery',
-                        style: TextStyle(color: Colors.black54, fontSize: 12),
-                      ),
-                    ],
-                  )
-                : Stack(
+            child: hasSelectedImage
+                ? Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.file(File(selectedImage!.path), fit: BoxFit.cover),
+                      Image.file(
+                        File(selectedImage!.path),
+                        fit: BoxFit.cover,
+                      ),
                       Positioned(
                         top: 12,
                         right: 12,
                         child: IconButton.filled(
-                          onPressed: removeImage,
-                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () {
+                            onImageSelected(null);
+                          },
+                          icon: const Icon(
+                            Icons.close_rounded,
+                          ),
                           style: IconButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: AppTheme.textDark,
@@ -117,7 +98,39 @@ class _RecipePhotoPickerState extends State<RecipePhotoPicker> {
                         ),
                       ),
                     ],
-                  ),
+                  )
+                : hasInitialImage
+                    ? RecipeImage(
+                        image: initialImage!,
+                        fit: BoxFit.cover,
+                      )
+                    : const Column(
+                        mainAxisAlignment:
+                            MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_photo_alternate_outlined,
+                            size: 48,
+                            color: AppTheme.primary,
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'Add Recipe Photo',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textDark,
+                            ),
+                          ),
+                          SizedBox(height: 6),
+                          Text(
+                            'Tap to choose from gallery',
+                            style: TextStyle(
+                              color: Colors.black54,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
           ),
         ),
       ],

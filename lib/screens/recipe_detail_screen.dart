@@ -1,17 +1,55 @@
 import 'package:flutter/material.dart';
 
+import 'recipe_form_screen.dart';
+
 import '../models/recipe_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/recipe_info_item.dart';
 import '../widgets/recipe_image.dart';
 
-class RecipeDetailScreen extends StatelessWidget {
+class RecipeDetailScreen extends StatefulWidget {
   final RecipeModel recipe;
+  final bool isMyRecipe;
 
-  const RecipeDetailScreen({super.key, required this.recipe});
+  const RecipeDetailScreen({
+    super.key,
+    required this.recipe,
+    this.isMyRecipe = false,
+  });
+
+  @override
+  State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
+}
+
+class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
+  late RecipeModel currentRecipe;
+
+  @override
+  void initState() {
+    super.initState();
+    currentRecipe = widget.recipe;
+  }
+
+  Future<void> editRecipe() async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RecipeFormScreen(recipe: currentRecipe),
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (updated == true) {
+      // My Recipes ekranına güncelleme yapıldığını bildiriyoruz.
+      Navigator.pop(context, true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final recipe = currentRecipe;
+
     final totalTime = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
 
     return Scaffold(
@@ -22,6 +60,7 @@ class RecipeDetailScreen extends StatelessWidget {
             pinned: true,
             backgroundColor: AppTheme.background,
             foregroundColor: AppTheme.textDark,
+
             leading: Padding(
               padding: const EdgeInsets.all(8),
               child: CircleAvatar(
@@ -33,6 +72,24 @@ class RecipeDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
+
+            // Edit butonu yalnızca kullanıcının tariflerinde görünür.
+            actions: [
+              if (widget.isMyRecipe)
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: IconButton(
+                      tooltip: 'Edit Recipe',
+                      icon: const Icon(Icons.edit_rounded),
+                      color: AppTheme.primary,
+                      onPressed: editRecipe,
+                    ),
+                  ),
+                ),
+            ],
+
             flexibleSpace: FlexibleSpaceBar(
               background: RecipeImage(image: recipe.image, fit: BoxFit.cover),
             ),
@@ -95,9 +152,7 @@ class RecipeDetailScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 30),
-
                   const Divider(),
-
                   const SizedBox(height: 24),
 
                   const Text(
@@ -161,7 +216,9 @@ class RecipeDetailScreen extends StatelessWidget {
                               ),
                             ),
                           ),
+
                           const SizedBox(width: 14),
+
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.only(top: 5),

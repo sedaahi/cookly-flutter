@@ -119,15 +119,22 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                   color: Colors.white,
                   elevation: 0,
                   child: ListTile(
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      final updated = await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              RecipeDetailScreen(recipe: recipe),
+                          builder: (context) => RecipeDetailScreen(
+                            recipe: recipe,
+                            isMyRecipe: true,
+                          ),
                         ),
                       );
+
+                      if (updated == true && mounted) {
+                        await loadMyRecipes();
+                      }
                     },
+
                     contentPadding: const EdgeInsets.all(16),
 
                     leading: RecipeImage(

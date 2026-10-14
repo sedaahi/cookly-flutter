@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../services/image_storage_service.dart';
+
 class RecipeImage extends StatelessWidget {
   final String image;
   final double? width;
@@ -27,6 +29,7 @@ class RecipeImage extends StatelessWidget {
       imageWidget = _buildPlaceholder();
     } else if (image.startsWith('http://') ||
         image.startsWith('https://')) {
+      // DummyJSON tariflerinin internet fotoğrafları.
       imageWidget = Image.network(
         image,
         width: width,
@@ -37,13 +40,24 @@ class RecipeImage extends StatelessWidget {
         },
       );
     } else {
-      imageWidget = Image.file(
-        File(image),
-        width: width,
-        height: height,
-        fit: fit,
-        errorBuilder: (context, error, stackTrace) {
-          return _buildPlaceholder();
+      // Kullanıcının cihazda kaydettiği fotoğraflar.
+      imageWidget = FutureBuilder<String>(
+        future: ImageStorageService().getImagePath(image),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return _buildPlaceholder();
+          }
+
+          return Image.file(
+            File(snapshot.data!),
+            width: width,
+            height: height,
+            fit: fit,
+            errorBuilder: (context, error, stackTrace) {
+              debugPrint('RECIPE IMAGE ERROR: $error');
+              return _buildPlaceholder();
+            },
+          );
         },
       );
     }

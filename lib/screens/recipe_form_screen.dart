@@ -3,14 +3,15 @@ import 'package:image_picker/image_picker.dart';
 
 import '../theme/app_theme.dart';
 import '../widgets/recipe_form_field.dart';
+import '../widgets/recipe_photo_picker.dart';
 import '../models/recipe_model.dart';
 import '../services/local_storage_service.dart';
 import '../services/image_storage_service.dart';
 
-import '../widgets/recipe_photo_picker.dart';
-
 class RecipeFormScreen extends StatefulWidget {
-  const RecipeFormScreen({super.key});
+  final RecipeModel? recipe;
+
+  const RecipeFormScreen({super.key, this.recipe});
 
   @override
   State<RecipeFormScreen> createState() => _RecipeFormScreenState();
@@ -26,83 +27,29 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   final servingsController = TextEditingController();
   final ingredientsController = TextEditingController();
   final instructionsController = TextEditingController();
+
   final LocalStorageService _storageService = LocalStorageService();
   final ImageStorageService _imageStorageService = ImageStorageService();
+
   bool isSaving = false;
+  XFile? selectedImage;
 
-  XFile? selectedImage; //kullanıcının galeriden seçtiği fotoğrafı tutacak
+  bool get isEditing => widget.recipe != null;
 
-  Future<void> saveRecipe() async {
-    if (!_formKey.currentState!.validate() || isSaving) {
-      return;
-    }
+  @override
+  void initState() {
+    super.initState();
 
-    setState(() {
-      isSaving = true;
-    });
+    final recipe = widget.recipe;
 
-    final ingredients = ingredientsController.text
-        .split('\n')
-        .map((item) => item.trim())
-        .where((item) => item.isNotEmpty)
-        .toList();
-
-    final instructions = instructionsController.text
-        .split('\n')
-        .map((item) => item.trim())
-        .where((item) => item.isNotEmpty)
-        .toList();
-
-    String imagePath = '';
-
-    if (selectedImage != null) {
-      imagePath = await _imageStorageService.saveImage(selectedImage!);
-    }
-    final recipe = RecipeModel(
-      id: DateTime.now().microsecondsSinceEpoch,
-      name: nameController.text.trim(),
-      image: imagePath,
-      ingredients: ingredients,
-      instructions: instructions,
-      prepTimeMinutes: int.parse(prepTimeController.text.trim()),
-      cookTimeMinutes: int.parse(cookTimeController.text.trim()),
-      servings: int.parse(servingsController.text.trim()),
-      caloriesPerServing: 0,
-      difficulty: 'Easy',
-      cuisine: cuisineController.text.trim(),
-      rating: 0.0,
-      tags: [],
-      mealType: [],
-    );
-
-    try {
-      await _storageService.saveMyRecipe(recipe);
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Recipe saved successfully!'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-
-      Navigator.pop(context, true);
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not save recipe. Please try again.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          isSaving = false;
-        });
-      }
+    if (recipe != null) {
+      nameController.text = recipe.name;
+      cuisineController.text = recipe.cuisine;
+      prepTimeController.text = recipe.prepTimeMinutes.toString();
+      cookTimeController.text = recipe.cookTimeMinutes.toString();
+      servingsController.text = recipe.servings.toString();
+      ingredientsController.text = recipe.ingredients.join('\n');
+      instructionsController.text = recipe.instructions.join('\n');
     }
   }
 
@@ -123,6 +70,94 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     return null;
   }
 
+  Future<void> saveRecipe() async {
+    if (isSaving || !_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      isSaving = true;
+    });
+
+    try {
+      final ingredients = ingredientsController.text
+          .split('\n')
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList();
+
+      final instructions = instructionsController.text
+          .split('\n')
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList();
+
+      // Düzenleme sırasında eski fotoğrafı koruyoruz.
+      String imagePath = widget.recipe?.image ?? '';
+
+      // Yeni fotoğraf seçilmişse eskisinin yerine kullanıyoruz.
+      if (selectedImage != null) {
+        imagePath = await _imageStorageService.saveImage(selectedImage!);
+      }
+
+      final recipe = RecipeModel(
+        // Düzenleme sırasında mevcut ID korunur.
+        id: widget.recipe?.id ?? DateTime.now().microsecondsSinceEpoch,
+        name: nameController.text.trim(),
+        image: imagePath,
+        ingredients: ingredients,
+        instructions: instructions,
+        prepTimeMinutes: int.parse(prepTimeController.text.trim()),
+        cookTimeMinutes: int.parse(cookTimeController.text.trim()),
+        servings: int.parse(servingsController.text.trim()),
+        caloriesPerServing: widget.recipe?.caloriesPerServing ?? 0,
+        difficulty: widget.recipe?.difficulty ?? 'Easy',
+        cuisine: cuisineController.text.trim(),
+        rating: widget.recipe?.rating ?? 0.0,
+        tags: widget.recipe?.tags ?? [],
+        mealType: widget.recipe?.mealType ?? [],
+      );
+
+      if (isEditing) {
+        await _storageService.updateMyRecipe(recipe);
+      } else {
+        await _storageService.saveMyRecipe(recipe);
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isEditing
+                ? 'Recipe updated successfully!'
+                : 'Recipe saved successfully!',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      debugPrint('SAVE RECIPE ERROR: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not save recipe. Please try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
     nameController.dispose();
@@ -139,9 +174,9 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Create Recipe',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          isEditing ? 'Edit Recipe' : 'Create Recipe',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       body: Form(
@@ -151,28 +186,34 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20),
           children: [
-            const Text(
-              'Share your creation!',
-              style: TextStyle(
+            Text(
+              isEditing ? 'Edit your recipe!' : 'Share your creation!',
+              style: const TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textDark,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Add the details of your delicious recipe.',
-              style: TextStyle(color: Colors.black54),
+
+            Text(
+              isEditing
+                  ? 'Update the details of your delicious recipe.'
+                  : 'Add the details of your delicious recipe.',
+              style: const TextStyle(color: Colors.black54),
             ),
             const SizedBox(height: 28),
 
             RecipePhotoPicker(
+              selectedImage: selectedImage,
+              initialImage: widget.recipe?.image,
               onImageSelected: (image) {
                 setState(() {
                   selectedImage = image;
                 });
               },
             ),
+
             const SizedBox(height: 24),
 
             RecipeFormField(
@@ -241,7 +282,13 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
               child: ElevatedButton.icon(
                 onPressed: isSaving ? null : saveRecipe,
                 icon: const Icon(Icons.check_rounded),
-                label: Text(isSaving ? 'Saving...' : 'Save Recipe'),
+                label: Text(
+                  isSaving
+                      ? 'Saving...'
+                      : isEditing
+                      ? 'Update Recipe'
+                      : 'Save Recipe',
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primary,
                   foregroundColor: Colors.white,

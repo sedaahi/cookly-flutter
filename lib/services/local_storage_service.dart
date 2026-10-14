@@ -46,28 +46,47 @@ class LocalStorageService {
     return favorites.contains(recipeId);
   }
 
+  Future<List<RecipeModel>> getMyRecipes() async {
+    final prefs = await SharedPreferences.getInstance();
 
-Future<List<RecipeModel>> getMyRecipes() async {
-  final prefs = await SharedPreferences.getInstance();
+    final savedRecipes = prefs.getStringList('my_recipes') ?? [];
 
-  final savedRecipes =
-      prefs.getStringList('my_recipes') ?? [];
+    return savedRecipes
+        .map((recipe) => RecipeModel.fromJson(jsonDecode(recipe)))
+        .toList();
+  }
 
-  return savedRecipes
-      .map((recipe) =>
-          RecipeModel.fromJson(jsonDecode(recipe)))
-      .toList();
-}
+  Future<void> saveMyRecipe(RecipeModel recipe) async {
+    final prefs = await SharedPreferences.getInstance();
 
-Future<void> saveMyRecipe(RecipeModel recipe) async {
-  final prefs = await SharedPreferences.getInstance();
+    final savedRecipes = prefs.getStringList('my_recipes') ?? [];
 
-  final savedRecipes =
-      prefs.getStringList('my_recipes') ?? [];
+    savedRecipes.add(jsonEncode(recipe.toJson()));
 
-  savedRecipes.add(jsonEncode(recipe.toJson()));
+    await prefs.setStringList('my_recipes', savedRecipes);
+  }
 
-  await prefs.setStringList('my_recipes', savedRecipes);
-}
+  Future<void> updateMyRecipe(RecipeModel updatedRecipe) async {
+    final prefs = await SharedPreferences.getInstance();
 
+    final recipes = await getMyRecipes();
+
+    final index = recipes.indexWhere((recipe) => recipe.id == updatedRecipe.id);
+
+    if (index == -1) {
+      throw Exception('Recipe not found');
+    }
+
+    recipes[index] = updatedRecipe;
+
+    final encodedRecipes = recipes
+        .map((recipe) => jsonEncode(recipe.toJson()))
+        .toList();
+
+    final success = await prefs.setStringList('my_recipes', encodedRecipes);
+
+    if (!success) {
+      throw Exception('Could not update recipe');
+    }
+  }
 }
