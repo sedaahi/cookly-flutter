@@ -1,3 +1,4 @@
+import 'package:cookly_flutter/services/local_storage_service.dart';
 import 'package:flutter/material.dart';
 
 import 'recipe_form_screen.dart';
@@ -46,6 +47,56 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
   }
 
+  Future<void> deleteRecipe() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Recipe?'),
+        content: const Text(
+          'Are you sure you want to delete this recipe? '
+          'This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext, false);
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext, true);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final storageService = LocalStorageService();
+
+      await storageService.deleteMyRecipe(currentRecipe.id);
+
+      if (!mounted) return;
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      debugPrint('DELETE RECIPE ERROR: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not delete recipe. Please try again.'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final recipe = currentRecipe;
@@ -73,11 +124,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               ),
             ),
 
-            // Edit butonu yalnızca kullanıcının tariflerinde görünür.
+            // Edit/Delete butonu yalnızca kullanıcının tariflerinde görünür.
             actions: [
-              if (widget.isMyRecipe)
+              if (widget.isMyRecipe) ...[
                 Padding(
-                  padding: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.only(right: 8),
                   child: CircleAvatar(
                     backgroundColor: Colors.white,
                     child: IconButton(
@@ -88,6 +139,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     ),
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: IconButton(
+                      tooltip: 'Delete Recipe',
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      color: Colors.redAccent,
+                      onPressed: deleteRecipe,
+                    ),
+                  ),
+                ),
+              ],
             ],
 
             flexibleSpace: FlexibleSpaceBar(

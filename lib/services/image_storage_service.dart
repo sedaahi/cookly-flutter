@@ -41,4 +41,28 @@ class ImageStorageService {
 
     return path.join(directory.path, fileName);
   }
+
+  Future<void> deleteImage(String imageName) async {
+    // İnternetten gelen görselleri silmeye çalışma.
+    if (imageName.isEmpty ||
+        imageName.startsWith('http://') ||
+        imageName.startsWith('https://')) {
+      return;
+    }
+
+    // Yalnızca uygulamanın oluşturduğu fotoğrafları sil.
+    if (imageName != path.basename(imageName) ||
+        !RegExp(r'^recipe_\d+\.(jpg|jpeg|png|webp)$').hasMatch(imageName)) {
+      return;
+    }
+
+    final directory = await getImagesDirectory();
+
+    final imageFile = File(path.join(directory.path, imageName));
+
+    if (await imageFile.exists()) {
+      await imageFile.delete();
+      print('Deleted recipe image: $imageName');
+    }
+  }
 }
