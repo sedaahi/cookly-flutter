@@ -4,6 +4,8 @@ import '../models/recipe_model.dart';
 import '../services/local_storage_service.dart';
 import '../theme/app_theme.dart';
 import 'recipe_form_screen.dart';
+import 'recipe_detail_screen.dart';
+import '../widgets/recipe_image.dart';
 
 class MyRecipesScreen extends StatefulWidget {
   const MyRecipesScreen({super.key});
@@ -117,14 +119,24 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                   color: Colors.white,
                   elevation: 0,
                   child: ListTile(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              RecipeDetailScreen(recipe: recipe),
+                        ),
+                      );
+                    },
                     contentPadding: const EdgeInsets.all(16),
-                    leading: const CircleAvatar(
-                      backgroundColor: AppTheme.surface,
-                      child: Icon(
-                        Icons.restaurant_menu_rounded,
-                        color: AppTheme.primary,
-                      ),
+
+                    leading: RecipeImage(
+                      image: recipe.image,
+                      width: 64,
+                      height: 64,
+                      borderRadius: BorderRadius.circular(12),
                     ),
+
                     title: Text(
                       recipe.name,
                       style: const TextStyle(fontWeight: FontWeight.bold),

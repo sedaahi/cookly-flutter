@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/recipe_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/recipe_info_item.dart';
+import '../widgets/recipe_image.dart';
 
 class RecipeDetailScreen extends StatelessWidget {
   final RecipeModel recipe;
@@ -33,12 +34,7 @@ class RecipeDetailScreen extends StatelessWidget {
               ),
             ),
             flexibleSpace: FlexibleSpaceBar(
-              background: Image.network(
-                recipe.image,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) =>
-                    const Center(child: Icon(Icons.restaurant, size: 60)),
-              ),
+              background: RecipeImage(image: recipe.image, fit: BoxFit.cover),
             ),
           ),
 

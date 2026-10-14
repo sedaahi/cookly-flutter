@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../theme/app_theme.dart';
 import '../widgets/recipe_form_field.dart';
 import '../models/recipe_model.dart';
 import '../services/local_storage_service.dart';
+import '../services/image_storage_service.dart';
+
+import '../widgets/recipe_photo_picker.dart';
 
 class RecipeFormScreen extends StatefulWidget {
   const RecipeFormScreen({super.key});
@@ -23,7 +27,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   final ingredientsController = TextEditingController();
   final instructionsController = TextEditingController();
   final LocalStorageService _storageService = LocalStorageService();
+  final ImageStorageService _imageStorageService = ImageStorageService();
   bool isSaving = false;
+
+  XFile? selectedImage; //kullanıcının galeriden seçtiği fotoğrafı tutacak
 
   Future<void> saveRecipe() async {
     if (!_formKey.currentState!.validate() || isSaving) {
@@ -46,10 +53,15 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         .where((item) => item.isNotEmpty)
         .toList();
 
+    String imagePath = '';
+
+    if (selectedImage != null) {
+      imagePath = await _imageStorageService.saveImage(selectedImage!);
+    }
     final recipe = RecipeModel(
       id: DateTime.now().microsecondsSinceEpoch,
       name: nameController.text.trim(),
-      image: '',
+      image: imagePath,
       ingredients: ingredients,
       instructions: instructions,
       prepTimeMinutes: int.parse(prepTimeController.text.trim()),
@@ -153,6 +165,15 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
               style: TextStyle(color: Colors.black54),
             ),
             const SizedBox(height: 28),
+
+            RecipePhotoPicker(
+              onImageSelected: (image) {
+                setState(() {
+                  selectedImage = image;
+                });
+              },
+            ),
+            const SizedBox(height: 24),
 
             RecipeFormField(
               label: 'Recipe Name',
