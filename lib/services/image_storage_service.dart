@@ -62,7 +62,6 @@ class ImageStorageService {
 
     if (await imageFile.exists()) {
       await imageFile.delete();
-      print('Deleted recipe image: $imageName');
     }
   }
 }

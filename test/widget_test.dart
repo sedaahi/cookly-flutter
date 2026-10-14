@@ -1,30 +1,60 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:cookly_flutter/main.dart';
+import 'package:cookly_flutter/models/recipe_model.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const CooklyApp());
+  group('RecipeModel Tests', () {
+    test('Recipe should be created from JSON', () {
+      final json = {
+        'id': 1,
+        'name': 'Homemade Pizza',
+        'image': 'pizza.jpg',
+        'ingredients': ['Flour', 'Cheese', 'Tomato'],
+        'instructions': ['Prepare dough', 'Bake pizza'],
+        'prepTimeMinutes': 20,
+        'cookTimeMinutes': 30,
+        'servings': 4,
+        'caloriesPerServing': 350,
+        'difficulty': 'Easy',
+        'cuisine': 'Italian',
+        'rating': 4.5,
+        'tags': ['Pizza'],
+        'mealType': ['Dinner'],
+      };
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+      final recipe = RecipeModel.fromJson(json);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      expect(recipe.id, 1);
+      expect(recipe.name, 'Homemade Pizza');
+      expect(recipe.ingredients.length, 3);
+      expect(recipe.mealType, contains('Dinner'));
+      expect(recipe.rating, 4.5);
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('Recipe should be converted to JSON', () {
+      final recipe = RecipeModel(
+        id: 2,
+        name: 'Chocolate Cake',
+        image: 'cake.jpg',
+        ingredients: ['Flour', 'Chocolate'],
+        instructions: ['Mix ingredients', 'Bake'],
+        prepTimeMinutes: 15,
+        cookTimeMinutes: 40,
+        servings: 6,
+        caloriesPerServing: 420,
+        difficulty: 'Easy',
+        cuisine: 'American',
+        rating: 0.0,
+        tags: ['Cake'],
+        mealType: ['Dessert'],
+      );
+
+      final json = recipe.toJson();
+
+      expect(json['id'], 2);
+      expect(json['name'], 'Chocolate Cake');
+      expect(json['mealType'], contains('Dessert'));
+      expect(json['ingredients'], hasLength(2));
+    });
   });
 }
