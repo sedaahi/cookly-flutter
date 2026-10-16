@@ -8,6 +8,16 @@ The app combines recipes retrieved from the **DummyJSON API** with user-created 
 
 <p align="center">   <img src="demo/cookly-demo.gif" alt="Cookly App Demo" width="280" /> </p>
 
+## 📱 Screenshots
+
+<p align="center">
+  <img src="./demo/screenshots/Cookly0.png" alt="Home" width="15%" />
+  <img src="./demo/screenshots/Cookly2.png" alt="Detail" width="15%" />
+  <img src="./demo/screenshots/Cookly1.png" alt="My Favorites" width="15%" />
+  <img src="./demo/screenshots/Cookly3.png" alt="My Recipes" width="15%" />
+  <img src="./demo/screenshots/Cookly4.png" alt="Add Recipes" width="15%" />
+</p>
+
 ## ✨ Features
 
 * **Recipe Discovery:** Browse recipes fetched from the DummyJSON API.
